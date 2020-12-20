@@ -106,6 +106,23 @@ void checkClientDisconnected(){
   }
 }
 
+String getAvailableClientConnectionType(){
+
+  
+    const char* host = "www.arduino.cc";
+    if (ethernet_client.connect(host,80)>0) {
+          Serial.println("Ethernet is Available");
+          return "Ethernet";
+    }
+  else if(wifi.createTCP(server, 80)){
+    if (wifi.releaseTCP()) {
+          Serial.println("Wifi is Available");
+          return "Wifi";
+    }
+  }
+  return "";
+}
+
 void InitializeWifi(){
     Serial.println("Initialize Wifi with this credentials:");
     Serial.print("SSID: ");
@@ -118,51 +135,8 @@ void InitializeWifi(){
           Serial.println(wifi.getLocalIP());
           delay(500);
           
-          Serial.println("Trying connect to server with Wifi");
-         if (wifi.createTCP(server, 80)) {
-          Serial.println("Connected to server");
-          
-          char JSON[200];
-          char *branchCharArray = place;
-          char key[] = "12312";
-          
-          sprintf(JSON, "?place=%s&key=%s\0", branchCharArray, key);
-          Serial.println(JSON);
-    
-          Serial.println("Begin POST Request");
-          /* Build the body to be POST */
-          char* body = (char *) malloc(sizeof(char) * 100);
-          sprintf(body, "{\"place\":%s,\"key\": %s}", branchCharArray, key);
-          Serial.println(JSON);
-  
-        
-          /* Builds the HTTP request to be POST */
-          char* data = (char *) malloc(sizeof(char) * 300);
-          sprintf(data, "POST /meskenpdks/public/device/log/add%s",JSON);
-          sprintf(data, "%s HTTP/1.1\r\n", data);
-          sprintf(data, "%sHost: %s\r\n", data, "unicrise.com");
-          sprintf(data, "%sUser-Agent: %s/%s\r\n", data, USER_AGENT, VERSION);
-          sprintf(data, "%sConnection: close\r\n", data);
-          sprintf(data, "%sContent-Type: application/json\r\n", data);
-          sprintf(data, "%sContent-Length: %d\r\n\r\n", data, dataLen(body)); 
-          sprintf(data, "%s%s\r\n\r\n", data, body);
-  
-          Serial.println(wifi.send((const uint8_t*)data, strlen(data)));
-          Serial.println(data);
-
-            if (wifi.releaseTCP()) {
-                Serial.print("release tcp ok\r\n");
-            } else {
-                Serial.print("release tcp err\r\n");
-            }
-        }
-
          
-        else{
-           Serial.println("Can't Connected to the server with Wifi ");
-
-        }
-
+     
     }
     else{
           Serial.println("Status: Can't Connected ");
@@ -198,56 +172,128 @@ void InitializeEthernet(){
 }
 
 
-
-void postCardInfo(char* &key){
-     
-     Serial.println("postCardInfo called");
-
-       const char* branchCharArray = place;
-       String branchString = String(branchCharArray);
-       String keyString = String(key);
-        char JSON[200];
-        sprintf(JSON, "?place=%s&key=%s\0", branchCharArray, key);
-        Serial.println(JSON);
-  
-        Serial.println("Begin POST Request");
-        /* Build the body to be POST */
-        char* body = (char *) malloc(sizeof(char) * 100);
-        sprintf(body, "{\"place\":%s,\"key\": %s}", branchCharArray, key);
-        Serial.println(JSON);
-
+void postCardInfoWithWifi(char* &key){
+          
+    Serial.println("Trying connect to server with Wifi");
+    
+    if (wifi.createTCP(server, 80)) {
+      Serial.println("Connected to server");
       
-        /* Builds the HTTP request to be POST */
-        char* data = (char *) malloc(sizeof(char) * 300);
-        sprintf(data, "POST /meskenpdks/public/device/log/add%s",JSON);
-        sprintf(data, "%s HTTP/1.1\r\n", data);
-        sprintf(data, "%sHost: %s\r\n", data, "unicrise.com");
-        sprintf(data, "%sUser-Agent: %s/%s\r\n", data, USER_AGENT, VERSION);
-        sprintf(data, "%sConnection: close\r\n", data);
-        sprintf(data, "%sContent-Type: application/json\r\n", data);
-        sprintf(data, "%sContent-Length: %d\r\n\r\n", data, dataLen(body)); 
-        sprintf(data, "%s%s\r\n\r\n", data, body);
+      char JSON[200];
+      char *branchCharArray = place;
+      char *key = key;
+      
+      sprintf(JSON, "?place=%s&key=%s\0", branchCharArray, key);
+      Serial.println(JSON);
 
-        if (ethernet_client.connect(server, PORT)) {
-            ethernet_client.print(data);
-          } else {
-            Serial.println("connection failed");
-          }
-  
-        while(ethernet_client.available()){
-     
-          String line = ethernet_client.readStringUntil('\r');
-          Serial.println(line);
-         
-        }
+      Serial.println("Begin POST Request");
+      /* Build the body to be POST */
+      char* body = (char *) malloc(sizeof(char) * 100);
+      sprintf(body, "{\"place\":%s,\"key\": %s}", branchCharArray, key);
+      Serial.println(JSON);
 
+    
+      /* Builds the HTTP request to be POST */
+      char* data = (char *) malloc(sizeof(char) * 300);
+      sprintf(data, "POST /meskenpdks/public/device/log/add%s",JSON);
+      sprintf(data, "%s HTTP/1.1\r\n", data);
+      sprintf(data, "%sHost: %s\r\n", data, "unicrise.com");
+      sprintf(data, "%sUser-Agent: %s/%s\r\n", data, USER_AGENT, VERSION);
+      sprintf(data, "%sConnection: close\r\n", data);
+      sprintf(data, "%sContent-Type: application/json\r\n", data);
+      sprintf(data, "%sContent-Length: %d\r\n\r\n", data, dataLen(body)); 
+      sprintf(data, "%s%s\r\n\r\n", data, body);
 
-        free(body);
-        free(data);
-        branchCharArray= 0;
+      Serial.println(wifi.send((const uint8_t*)data, strlen(data)));
+      Serial.println(data);
+
+      if (wifi.releaseTCP()) {
+          Serial.print("release tcp ok\r\n");
+      } else {
+          Serial.print("release tcp err\r\n");
+      }
+
+      free(body);
+      free(data);
+      branchCharArray= 0;
 
       Serial.println("Successfully Ended");
+    
+    }
 
+   else{
+       Serial.println("Can't Connected to the server with Wifi ");
+
+    }
+
+}
+
+
+
+void postCardInfoWithEthernet(char* &key){
+     
+    Serial.println("Trying connect to server with Ethernet");
+
+    const char* branchCharArray = place;
+    String branchString = String(branchCharArray);
+    String keyString = String(key);
+   
+    char JSON[200];
+    sprintf(JSON, "?place=%s&key=%s\0", branchCharArray, key);
+    Serial.println(JSON);
+
+    Serial.println("Begin POST Request");
+    /* Build the body to be POST */
+    char* body = (char *) malloc(sizeof(char) * 100);
+    sprintf(body, "{\"place\":%s,\"key\": %s}", branchCharArray, key);
+    Serial.println(JSON);
+
+  
+    /* Builds the HTTP request to be POST */
+    char* data = (char *) malloc(sizeof(char) * 300);
+    sprintf(data, "POST /meskenpdks/public/device/log/add%s",JSON);
+    sprintf(data, "%s HTTP/1.1\r\n", data);
+    sprintf(data, "%sHost: %s\r\n", data, "unicrise.com");
+    sprintf(data, "%sUser-Agent: %s/%s\r\n", data, USER_AGENT, VERSION);
+    sprintf(data, "%sConnection: close\r\n", data);
+    sprintf(data, "%sContent-Type: application/json\r\n", data);
+    sprintf(data, "%sContent-Length: %d\r\n\r\n", data, dataLen(body)); 
+    sprintf(data, "%s%s\r\n\r\n", data, body);
+
+    if (ethernet_client.connect(server, PORT)) {
+      ethernet_client.print(data);
+    } else {
+      Serial.println("connection failed");
+    }
+
+    while(ethernet_client.available()){
+ 
+      String line = ethernet_client.readStringUntil('\r');
+      Serial.println(line);
+     
+    }
+
+    ethernet_client.stop();
+
+    free(body);
+    free(data);
+    branchCharArray= 0;
+
+    Serial.println("Successfully Ended");
+
+}
+
+void postCardInfo(char* &key){
+  if(getAvailableClientConnectionType() == "Ethernet"){
+    postCardInfoWithEthernet(key);
+  }
+  else if(getAvailableClientConnectionType() == "Wifi"){
+    postCardInfoWithWifi(key);
+  }
+  else{
+    Serial.println("Post Failed Check Internet Connection");
+    // TODO: Store Data when the internet available again and post all log to server
+  }
 }
 
 int dataLen(char* variable) {
